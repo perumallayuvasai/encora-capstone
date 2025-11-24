@@ -1,0 +1,93 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: api-gateway
+  main:
+    web-application-type: reactive
+
+  cloud:
+    gateway:
+      routes:
+        #Order Routes
+        - id: order-service
+          uri: http://localhost:8080
+          predicates:
+            - Path=/api/v1/order/**
+          filters: 
+            - StripPrefix=3
+            - JwtValidation
+
+        - id: order-service-docs
+          uri: http://localhost:8080
+          predicates:
+            - Path=/docs/v1/order/api-docs
+          filters:
+            - StripPrefix=3
+
+        #Product Routes
+        - id: product-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/v1/product/**
+          filters:
+            - StripPrefix=2
+            - JwtValidation
+
+        - id: product-service-docs
+          uri: http://localhost:8081
+          predicates:
+            - Path=/docs/v1/product/api-docs
+          filters:
+            - StripPrefix=3
+
+      
+        #Auth Routes
+        - id: auth-service
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/v1/auth/**
+          filters:
+            - StripPrefix=3
+        
+        
+        - id: auth-service-docs
+          uri: http://localhost:8084
+          predicates:
+            - Path=/docs/v1/auth/api-docs
+          filters:
+            - StripPrefix=3
+
+springdoc:
+  enable-native-support: true
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    urls:
+      - name: Order Service
+        url: /docs/v1/order/api-docs
+      - name: Product Service
+        url: /docs/v1/product/api-docs
+      - name: Auth Service
+        url: /docs/v1/auth/api-docs
+
+
+grpc:
+  client:
+    auth-service:
+      address: 'static://localhost:9010'
+      negotiationType: PLAINTEXT
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    reactor.netty: DEBUG
+    com.example.api_gateway: DEBUG  
+    net.devh.boot.grpc: DEBUG
+
+
