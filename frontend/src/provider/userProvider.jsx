@@ -4,6 +4,7 @@ import React, { use, useState, createContext } from "react";
 /**
  * @typedef {Object} User
  * @property {string} userId
+ * @property {Array<String>} roles
  * @property {string} userName
  * @property {string} email
  */
@@ -22,7 +23,9 @@ function UserProvider({ children }) {
         try {
             const accessToken = localStorage.getItem("accessToken");
             if (accessToken) {
-                return jwtDecode(accessToken);
+                const decodedUser = jwtDecode(accessToken);
+                console.log(decodedUser);
+                return decodedUser;
             }
         } catch (error) {
             console.error("Error decoding token:", error);

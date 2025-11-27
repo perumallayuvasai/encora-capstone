@@ -44,12 +44,11 @@ export default function ProductsPage() {
             qty: 10,
             category: "men",
             img: "https://images.unsplash.com/photo-1528701800489-20be0f6a9949?w=800",
-        }
+        },
     ]);
 
     return (
         <div className="bg-base-200 min-h-screen py-10 px-6 lg:px-20 animate-fadeIn">
-
             {/* Title */}
             <h1 className="text-4xl font-bold mb-6  text-center tracking-wide">
                 Explore Our Collection
