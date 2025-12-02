@@ -1,5 +1,6 @@
 package org.example.events;
 
+import org.example.enums.Size;
 import org.example.enums.StockCheckEventResponseType;
 
 public class PlaceOrderEvent {
@@ -7,11 +8,14 @@ public class PlaceOrderEvent {
   private String productId;
   private int quantity;
   private StockCheckEventResponseType responseType;
+  private Size productSize;
 
-  public PlaceOrderEvent() {}
+  public PlaceOrderEvent() {
+  }
 
-  public PlaceOrderEvent(String productId, int quantity, StockCheckEventResponseType responseType) {
+  public PlaceOrderEvent(String productId, Size productSize, int quantity, StockCheckEventResponseType responseType) {
     this.productId = productId;
+    this.productSize = productSize;
     this.quantity = quantity;
     this.responseType = responseType;
   }
@@ -38,5 +42,13 @@ public class PlaceOrderEvent {
 
   public void setResponseType(StockCheckEventResponseType responseType) {
     this.responseType = responseType;
+  }
+
+  public Size getProductSize() {
+    return productSize;
+  }
+
+  public void setProductSize(Size productSize) {
+    this.productSize = productSize;
   }
 }
