@@ -1,35 +1,45 @@
 package com.techademy.orderservice.controller;
 
-import com.techademy.orderservice.dto.*;
-import com.techademy.orderservice.service.OrderService;
-import org.springframework.http.*;
+import org.example.events.ProductCheckEvent;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import jakarta.validation.Valid;
-import java.util.List;
+
+import com.techademy.orderservice.dto.OrderItemRequestDto;
+import com.techademy.orderservice.dto.OrderRequestDto;
+import com.techademy.orderservice.service.OrderService;
+import com.techademy.orderservice.service.ProductCheckEventProducerService;
 
 @RestController
-@RequestMapping("/api/v1/orders")
+@RequestMapping()
 public class OrderController {
 
-    private final OrderService service;
+    private final OrderService orderService;
 
-    public OrderController(OrderService svc) {
-        this.service = svc;
+    private final ProductCheckEventProducerService productCheckEventProducerService;
+
+    public OrderController(OrderService orderService,
+            ProductCheckEventProducerService productCheckEventProducerService) {
+        this.orderService = orderService;
+        this.productCheckEventProducerService = productCheckEventProducerService;
     }
 
-    @PostMapping("/{userId}")
-    public ResponseEntity<OrderDto> placeOrder(@PathVariable String userId,
-                                               @Valid @RequestBody CreateOrderRequest req) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.createOrder(userId, req));
-    }
+    @PostMapping("/")
+    @PreAuthorize("hasRole('USER')")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResponseEntity<String> placeOrder(@RequestBody OrderItemRequestDto orderRequest) {
+        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
 
-    @GetMapping("/{orderId}")
-    public ResponseEntity<OrderDto> getOrder(@PathVariable String orderId) {
-        return ResponseEntity.ok(service.getOrder(orderId));
-    }
+        ProductCheckEvent productCheckEvent = new ProductCheckEvent();
+        productCheckEvent.setProductId(orderRequest.getProductId().toString());
+        productCheckEvent.setSize(orderRequest.getSize());
+        productCheckEvent.setQuantity(orderRequest.getQuantity());
+        productCheckEvent.setUserId(userId);
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<OrderDto>> getUserOrders(@PathVariable String userId) {
-        return ResponseEntity.ok(service.getOrdersByUser(userId));
+        productCheckEventProducerService.sendProductCheckEvent(productCheckEvent);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body("Order placed successfully");
     }
 }

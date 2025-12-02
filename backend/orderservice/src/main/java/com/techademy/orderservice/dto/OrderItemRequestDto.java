@@ -1,55 +1,18 @@
-package com.techademy.orderservice.entity;
+package com.techademy.orderservice.dto;
 
-import jakarta.persistence.*;
 import java.math.BigDecimal;
 
-@Entity
-@Table(name = "order_items")
-public class OrderItem {
+import org.example.enums.Size;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false)
-    private Order order;
-
-    @Column(name = "product_id", nullable = false)
+public class OrderItemRequestDto {
     private Long productId;
-
-    @Column(name = "product_variant_id", nullable = false)
     private Long productVariantId;
-
-    @Column(name = "product_name", nullable = false)
     private String productName;
-
-    @Column(name = "product_size", nullable = false)
-    private String size;
-
-    @Column(nullable = false)
+    private Size size;
     private BigDecimal price;
-
-    @Column(nullable = false)
     private Integer quantity;
 
     // Getters and Setters
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Order getOrder() {
-        return order;
-    }
-
-    public void setOrder(Order order) {
-        this.order = order;
-    }
-
     public Long getProductId() {
         return productId;
     }
@@ -74,11 +37,11 @@ public class OrderItem {
         this.productName = productName;
     }
 
-    public String getSize() {
+    public Size getSize() {
         return size;
     }
 
-    public void setSize(String size) {
+    public void setSize(Size size) {
         this.size = size;
     }
 

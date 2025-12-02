@@ -54,6 +54,15 @@ spring:
                 - StripPrefix=3
                 - JwtValidation
 
+            # Order Service Routes - HAS JwtValidation
+            - id: order-service
+              uri: http://localhost:8086
+              predicates:
+                - Path=/api/v1/order/**
+              filters:
+                - StripPrefix=3
+                - JwtValidation
+
             # Websocket Service Routes - HAS JwtValidation
             - id: websocket-service
               uri: http://localhost:3000

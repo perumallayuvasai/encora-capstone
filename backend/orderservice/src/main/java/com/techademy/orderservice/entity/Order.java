@@ -1,7 +1,8 @@
 package com.techademy.orderservice.entity;
 
 import jakarta.persistence.*;
-import java.time.Instant;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,37 +11,65 @@ import java.util.List;
 public class Order {
 
     @Id
-    private String orderId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @Column(nullable = false)
-    private String userId;
+    @Column(name = "order_date", nullable = false, updatable = false)
+    private LocalDateTime orderDate;
 
-    private Instant timestamp;
+    @Column(name = "total_amount", nullable = false)
+    private BigDecimal totalAmount;
 
+    // Owning side is OrderItem, but we cascade ALL changes from here
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OrderItem> items = new ArrayList<>();
+    private List<OrderItem> orderItems = new ArrayList<>();
 
     @PrePersist
-    public void prePersist() {
-        timestamp = Instant.now();
+    protected void onCreate() {
+        this.orderDate = LocalDateTime.now();
     }
 
-    public String getOrderId() {
-        return orderId;
+    // Helper method to maintain bidirectional consistency
+    public void addOrderItem(OrderItem item) {
+        orderItems.add(item);
+        item.setOrder(this);
     }
-    public void setOrderId(String orderId) {
-        this.orderId = orderId;
+
+    public void removeOrderItem(OrderItem item) {
+        orderItems.remove(item);
+        item.setOrder(null);
     }
-    public String getUserId() {
-        return userId;
+
+    // Getters and Setters
+    public Long getId() {
+        return id;
     }
-    public void setUserId(String userId) {
-        this.userId = userId;
+
+    public void setId(Long id) {
+        this.id = id;
     }
-    public Instant getTimestamp() {
-        return timestamp;
+
+    public LocalDateTime getOrderDate() {
+        return orderDate;
     }
-    public List<OrderItem> getItems() {
-        return items;
+
+    public void setOrderDate(LocalDateTime orderDate) {
+        this.orderDate = orderDate;
+    }
+
+    public BigDecimal getTotalAmount() {
+        return totalAmount;
+    }
+
+    public void setTotalAmount(BigDecimal totalAmount) {
+        this.totalAmount = totalAmount;
+    }
+
+    public List<OrderItem> getOrderItems() {
+        return orderItems;
+    }
+
+    public void setOrderItems(List<OrderItem> orderItems) {
+        this.orderItems = orderItems;
     }
 }

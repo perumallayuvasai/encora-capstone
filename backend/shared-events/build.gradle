@@ -8,6 +8,7 @@
 plugins {
     // Apply the java-library plugin for API and implementation separation.
     id 'java-library'
+    id 'maven-publish'
     id 'com.google.protobuf' version '0.9.4'
     id 'eclipse'
 }
@@ -70,6 +71,19 @@ sourceSets {
 tasks.processResources {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
+
+//publishing 
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        mavenLocal()
+    }
+}
+
 
 
 // Apply a specific Java toolchain to ease working on different environments.

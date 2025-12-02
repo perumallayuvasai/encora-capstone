@@ -1,9 +1,10 @@
 package com.techademy.orderservice.repository;
 
-import com.techademy.orderservice.entity.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
-import java.util.List;
+import org.springframework.stereotype.Repository;
 
-public interface OrderRepository extends JpaRepository<Order, String> {
-    List<Order> findByUserId(String userId);
+import com.techademy.orderservice.entity.Order;
+
+@Repository
+public interface OrderRepository extends JpaRepository<Order, Long> {
 }
