@@ -1,7 +1,7 @@
 package com.techademy.shoppingcart.controller;
 
 import com.techademy.shoppingcart.dto.*;
-import com.techademy.shoppingcart.enums.Size;
+import org.example.enums.Size;
 import com.techademy.shoppingcart.service.CartService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;

@@ -3,7 +3,7 @@ package com.techademy.shoppingcart.service;
 import com.techademy.shoppingcart.dto.*;
 import com.techademy.shoppingcart.entity.Cart;
 import com.techademy.shoppingcart.entity.CartItem;
-import com.techademy.shoppingcart.enums.Size;
+import org.example.enums.Size;
 import com.techademy.shoppingcart.exception.NotFoundException;
 import com.techademy.shoppingcart.repository.CartRepository;
 import org.springframework.stereotype.Service;

@@ -1,6 +1,6 @@
 package com.techademy.shoppingcart.entity;
 
-import com.techademy.shoppingcart.enums.Size;
+import org.example.enums.Size;
 
 import jakarta.persistence.*;
 

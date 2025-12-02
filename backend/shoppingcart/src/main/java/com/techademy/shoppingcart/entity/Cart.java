@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import com.techademy.shoppingcart.enums.Size;
+import org.example.enums.Size;
 
 @Entity
 @Table(name = "carts")

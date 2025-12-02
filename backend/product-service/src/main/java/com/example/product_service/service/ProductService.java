@@ -24,7 +24,8 @@ import com.example.product_service.entity.Category;
 import com.example.product_service.entity.Product;
 import com.example.product_service.entity.ProductVariant;
 import com.example.product_service.enums.Gender;
-import com.example.product_service.enums.Size;
+import org.example.enums.Size;
+import org.example.enums.StockCheckEventResponseType;
 import com.example.product_service.exception.ProductNotFoundError;
 import com.example.product_service.repository.CategoryRepository;
 import com.example.product_service.repository.ProductRepository;
@@ -66,7 +67,7 @@ public class ProductService {
             Boolean inStockOnly,
             String searchTerm,
             Pageable pageable) {
-        Specification<Product> spec = Specification.<Product>where(null)
+        Specification<Product> spec = Specification.<Product>unrestricted()
                 .and(ProductSpecificationBuilder.hasCategory(categoryIds))
                 .and(ProductSpecificationBuilder.hasGender(gender))
                 .and(
@@ -249,5 +250,49 @@ public class ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundError("Product not found with id: " + id));
         productRepository.delete(product);
+    }
+
+    /**
+     * Checks product availability and reduces stock if sufficient.
+     * Used by Kafka listeners for order processing.
+     */
+    @Transactional
+    public StockCheckEventResponseType checkAndReduceStock(String productId, Size size,
+            int quantity) {
+        Long id;
+        try {
+            id = Long.parseLong(productId);
+        } catch (NumberFormatException e) {
+            return StockCheckEventResponseType.PRODUCT_NOT_FOUND;
+        }
+
+        java.util.Optional<Product> productOptional = productRepository.findById(id);
+        if (productOptional.isEmpty()) {
+            return StockCheckEventResponseType.PRODUCT_NOT_FOUND;
+        }
+
+        Product product = productOptional.get();
+
+        java.util.Optional<ProductVariant> variantOptional = product.getVariants().stream()
+                .filter(variant -> variant.getSize() == size)
+                .findFirst();
+
+        if (variantOptional.isEmpty()) {
+            return StockCheckEventResponseType.PRODUCT_NOT_FOUND;
+        }
+
+        ProductVariant variant = variantOptional.get();
+
+        // 3. Check if stock is sufficient
+        if (variant.getStockQuantity() < quantity) {
+            return StockCheckEventResponseType.INSUFFICIENT_STOCK;
+        }
+
+        // 4. Reduce the stock
+        variant.setStockQuantity(variant.getStockQuantity() - quantity);
+
+        productVariantRepository.save(variant);
+
+        return StockCheckEventResponseType.SUCCESS;
     }
 }

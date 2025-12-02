@@ -15,6 +15,7 @@ java {
 }
 
 repositories {
+	mavenLocal()
 	mavenCentral()
 }
 
@@ -22,6 +23,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.kafka:spring-kafka'
+	implementation 'org.example:shared-events:1.0.0'
 	// AWS S3
     implementation 'com.amazonaws:aws-java-sdk-s3:1.12.700'
 	runtimeOnly 'com.h2database:h2'

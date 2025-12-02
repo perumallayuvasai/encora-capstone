@@ -1,179 +1,85 @@
-const express = require("express");
 const WebSocket = require("ws");
-const { WebSocketServer } = WebSocket;
-const { URL } = require("url");
-//const paymentRoutes = require("./paymentRoutes");
+const { Kafka } = require("kafkajs");
 
-const app = express();
-const PORT = 3000;
+// --- CONFIGURATION ---
+const KAFKA_BROKER = "localhost:9092";
+const TOPIC = "order-notification-topic";
+const WS_PORT = 8081;
 
-app.use(express.json());
-//app.use("/payments", paymentRoutes);
+// --- 1. WEBSOCKET SERVER SETUP ---
+const wss = new WebSocket.Server({ port: WS_PORT });
+const clients = new Map(); // Store clients: userId -> WebSocket Connection
 
-
-// Health check
-app.get("/", (req, res) => {
-  res.send("Backend with WebSocket is up!");
-});
-
-const server = app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
-
-/**
- * Map of userId -> Set<WebSocket>
- * Each WebSocket has:
- *   ws.userId
- *   ws.connectionId
- */
-const userConnections = new Map();
-let connectionCounter = 0;
-
-// Add WebSocket connection
-function addConnection(userId, ws) {
-  if (!userConnections.has(userId)) {
-    userConnections.set(userId, new Set());
-  }
-  userConnections.get(userId).add(ws);
-}
-
-// Remove WebSocket connection
-function removeConnection(userId, ws) {
-  const set = userConnections.get(userId);
-  if (!set) return;
-
-  set.delete(ws);
-
-  if (set.size === 0) {
-    userConnections.delete(userId);
-  }
-}
-
-// Create WebSocket server
-const wss = new WebSocketServer({ server });
+console.log(`WebSocket server started on port ${WS_PORT}`);
 
 wss.on("connection", (ws, req) => {
-  // IMPORTANT: API Gateway will send x-user-id after JWT validation
-  let userId = req.headers["x-user-id"];
+    // EXTRACT USER ID FROM HEADERS
+    // Headers are lowercased by Node.js automatically
+    const userId = req.headers["x-user-id"];
 
-// ALLOW query param for LOCAL TESTING
-if (!userId) {
-  const fullUrl = new URL(req.url, `http://${req.headers.host}`);
-  userId = fullUrl.searchParams.get("userId");
-}
-
-// still missing? reject
-if (!userId) {
-  console.warn("WebSocket connection without userId. Closing.");
-  ws.close(1008, "Missing user id");
-  return;
-}
-
-  const connectionId = `${userId}-${++connectionCounter}`;
-  ws.userId = userId;
-  ws.connectionId = connectionId;
-
-  addConnection(userId, ws);
-
-  console.log(
-    `WebSocket connected: userId=${userId}, connectionId=${connectionId}`
-  );
-
-  // Notify client
-  ws.send(
-    JSON.stringify({
-      type: "WS_CONNECTED",
-      userId,
-      connectionId,
-      message: "WebSocket connected",
-    })
-  );
-
-  // Incoming message handler
-  ws.on("message", (raw) => {
-    let msg;
-
-    try {
-      msg = JSON.parse(raw.toString());
-    } catch {
-      console.log(
-        `Invalid JSON from ${userId}/${connectionId}:`,
-        raw.toString()
-      );
-      return;
+    if (!userId) {
+        console.log("Connection rejected: No x-user-id header provided");
+        ws.close(1008, "UserId required in headers"); // 1008 = Policy Violation
+        return;
     }
 
-    console.log(`Message from ${userId}/${connectionId}:`, msg);
-
-    // Debug PING → PONG
-    if (msg.type === "PING") {
-      ws.send(
-        JSON.stringify({
-          type: "PONG",
-          connectionId,
-          timestamp: Date.now(),
-        })
-      );
-    }
-  });
-
-  // On close
-  ws.on("close", () => {
+    // Store the connection
+    clients.set(userId, ws);
     console.log(
-      `WebSocket closed: userId=${userId}, connectionId=${connectionId}`
+        `User connected: ${userId} (Roles: ${req.headers["x-user-roles"] || "N/A"})`,
     );
-    removeConnection(userId, ws);
-  });
+
+    ws.on("close", () => {
+        clients.delete(userId);
+        console.log(`User disconnected: ${userId}`);
+    });
+
+    ws.on("error", (err) => {
+        console.error(`WebSocket error for user ${userId}:`, err);
+    });
 });
 
-// ... (your whole server.js same as before)
+// --- 2. KAFKA CONSUMER SETUP ---
+const kafka = new Kafka({
+    clientId: "notification-service",
+    brokers: [KAFKA_BROKER],
+});
 
-// Helper function: Send ORDER_PLACED notification to all active WebSocket
-function sendOrderPlacedNotification(userId, orderId) {
-  const connections = userConnections.get(userId);
+const consumer = kafka.consumer({ groupId: "notification-group" });
 
-  if (!connections || connections.size === 0) {
-    console.log(
-      `No active WebSocket connections for userId=${userId} (orderId=${orderId})`
-    );
-    return;
-  }
+const runKafkaConsumer = async () => {
+    await consumer.connect();
+    console.log("Kafka Consumer connected");
 
-  const payload = {
-    type: "ORDER_PLACED",
-    userId,
-    orderId,
-    message: `Your order ${orderId} has been placed successfully.`,
-  };
+    await consumer.subscribe({ topic: TOPIC, fromBeginning: false });
 
-  for (const ws of connections) {
-    if (ws.readyState === WebSocket.OPEN) {
-      ws.send(
-        JSON.stringify({
-          ...payload,
-          connectionId: ws.connectionId,
-        })
-      );
-    }
-  }
+    await consumer.run({
+        eachMessage: async ({ topic, partition, message }) => {
+            try {
+                const event = JSON.parse(message.value.toString());
+                const targetUserId = event.userId;
 
-  console.log(
-    `Sent ORDER_PLACED to ${connections.size} connection(s) for userId=${userId}`
-  );
-}
+                console.log(
+                    `Received notification for User: ${targetUserId}, Status: ${event.status}`,
+                );
 
-/**
- * STEP 3 TEST: Send a test message to a user (U101) 5 seconds after server starts
- */
-setTimeout(() => {
-  console.log("TEST: Sending test message to user U101");
-  sendOrderPlacedNotification("U101", "TEST-ORDER-123");
-}, 5000);
+                // --- 3. PUSH TO USER ---
+                const clientWs = clients.get(targetUserId);
 
-// Export for Kafka consumer
-module.exports = {
-  server,
-  wss,
-  userConnections,
-  sendOrderPlacedNotification,
+                if (clientWs && clientWs.readyState === WebSocket.OPEN) {
+                    clientWs.send(JSON.stringify(event));
+                    console.log(`Notification pushed to User: ${targetUserId}`);
+                } else {
+                    // Optional: Store offline notification to DB here if needed
+                    console.log(
+                        `User ${targetUserId} offline. Notification skipped.`,
+                    );
+                }
+            } catch (error) {
+                console.error("Error processing Kafka message:", error);
+            }
+        },
+    });
 };
+
+runKafkaConsumer().catch(console.error);

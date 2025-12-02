@@ -1,6 +1,6 @@
 package com.example.product_service.entity;
 
-import com.example.product_service.enums.Size;
+import org.example.enums.Size;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import jakarta.persistence.*;

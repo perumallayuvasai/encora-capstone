@@ -7,13 +7,15 @@ import org.springframework.stereotype.Service;
 @Service
 public class ProductCheckEventProducerService {
 
-  public final KafkaTemplate<String, ProductCheckEvent> kafkaTemplate;
+    public final KafkaTemplate<String, ProductCheckEvent> kafkaTemplate;
 
-  public ProductCheckEventProducerService(KafkaTemplate<String, ProductCheckEvent> kafkaTemplate) {
-    this.kafkaTemplate = kafkaTemplate;
-  }
+    public ProductCheckEventProducerService(
+        KafkaTemplate<String, ProductCheckEvent> kafkaTemplate
+    ) {
+        this.kafkaTemplate = kafkaTemplate;
+    }
 
-  public void sendProductCheckEvent(ProductCheckEvent event) {
-    kafkaTemplate.send("product-check-event", event);
-  }
+    public void sendProductCheckEvent(ProductCheckEvent event) {
+        kafkaTemplate.send("product-check-event", event);
+    }
 }

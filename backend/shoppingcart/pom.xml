@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.5</version>   <!-- FIXED VERSION -->
+        <version>3.3.5</version>   
         <relativePath/>
     </parent>
 
@@ -34,6 +34,14 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
+        
+        <!-- shared-library -->
+        <dependency>
+            <groupId>org.example</groupId>
+            <artifactId>shared-events</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
 
         <!-- Validation -->
         <dependency>

@@ -1,6 +1,6 @@
 package com.techademy.shoppingcart.dto;
 
-import com.techademy.shoppingcart.enums.Size;
+import org.example.enums.Size;
 
 public class CartItemDto {
     private String productId;
